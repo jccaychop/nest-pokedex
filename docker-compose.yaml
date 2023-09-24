@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+  db:
+    image: mongo:5.0.0
+    restart: always
+    ports:
+      - 27017:27017
+    environment:
+      MONGODB_DATABASE: nest-pokemon
+    volumes:
+      - ./mongo:/data/db
+
+# ports:
+#      - 27017:27017 (puerto de MONGO de mi computadora) : (puerto de MONGO del contenedor).
+# De esta manera hacemos un puente entre mi computadora y el contenedor
+
+# volumes: guardamos una copia de la data de mi BD para que sea persistente, en caso eliminemos la imagen o el contenedor
+#      - ./mongo:/data/db   se crea automatica la carpeta MONGO en mi proyecto
+# conectamos la caperta MONGO de mi proyecto, con la carpeta DATA/DB de la imagen en el contenedor
