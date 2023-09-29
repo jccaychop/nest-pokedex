@@ -4,19 +4,28 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, isValidObjectId } from 'mongoose';
 import { Pokemon } from './entities/pokemon.entity';
 
 import { CreatePokemonDto } from './dto/create-pokemon.dto';
 import { UpdatePokemonDto } from './dto/update-pokemon.dto';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Injectable()
 export class PokemonService {
+  private defaultLimit: number;
+
   constructor(
     @InjectModel(Pokemon.name)
     private readonly pokemonModel: Model<Pokemon>,
-  ) {}
+
+    private readonly configService: ConfigService,
+  ) {
+    this.defaultLimit = this.configService.get<number>('defaultLimit');
+  }
 
   async create(createPokemonDto: CreatePokemonDto) {
     createPokemonDto.name = createPokemonDto.name.toLowerCase();
@@ -29,8 +38,29 @@ export class PokemonService {
     }
   }
 
-  findAll() {
-    return `This action returns all pokemon`;
+  async findAll(paginationDto: PaginationDto) {
+    const { limit = this.defaultLimit, offset = 0 } = paginationDto;
+    const rawData = await this.pokemonModel;
+    const count = await rawData.countDocuments();
+
+    return {
+      count,
+      pages: Math.ceil(count / limit),
+      results: await rawData
+        .find()
+        .limit(limit)
+        .skip(offset)
+        .sort({ no: 'asc' }) //ordenado de manera ascendente
+        .select('-__v'), // no muestra la columna __v
+    };
+
+    // return await this.pokemonModel
+    //   .find()
+    //   .count()
+    //   .limit(limit)
+    //   .skip(offset)
+    //   .sort({ no: 'asc' }) //ordenado de manera ascendente
+    //   .select('-__v'); // no muestra la columna __v
   }
 
   async findOne(term: string) {
